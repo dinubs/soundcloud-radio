@@ -1,0 +1,10 @@
+extends layout
+
+block content
+	form(id="comment", method="post", action="#")
+		input#commentText(type="text", placeholder="Comment")
+		input(type="submit", name="submit" value="Submit")
+	form(id="track", method="post", action="#")
+		input#url(type="url", placeholder="Request Track")
+		input(type="submit", name="submit" value="Submit")
+	div#comments
