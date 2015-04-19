@@ -18,35 +18,44 @@ var currentTime = 0;
 var currentTrackDuration = 0;
 var interval = 50;
 
+var started = false;
+
 io.on('connection', function (socket) {
 	socket.on('comment', function(data) {
-		console.log(data);
 		io.emit('comment', data);
 	});
 	if (currentStreamUrl) {
-		socket.emit('set audio player', {stream: currentStreamUrl, currentTime: currentTime})
+		socket.emit('set audio player', {soundcloud: tracks[0], stream: currentStreamUrl, currentTime: currentTime})
 	}
 	socket.on('add track', function(url) {
+		if (url.kind == 'playlist' || url.streamable == false) {
+			return false
+		}
 		console.log(url.duration);
 		currentTrackDuration = url.duration
 		tracks.push(url);
 		currentStreamUrl = url.stream_url + '?client_id=6e73cbbe5e7edeba75334acbeb81492f';
 		console.log(tracks.length);
 		currentTime = 0;
-		if (currentTrackDuration != 0) {
+		if (!started) {
 			setInterval(function() {
 				currentTime += interval;
-				console.log(currentTime);
-				if (currentTime > currentTrackDuration) {
+				if (currentTime > currentTrackDuration && started) {
 					currentTime = 0;
-					io.emit('comment', 'Choosing next track!');
-					tracks[i].shift();
+					tracks.shift();
+					console.log(tracks[0]);
 					if (tracks.length = 0) {
+						started = false;
 						io.emit('comment', 'No tracks left in the queue :(');
+					} else {
+						io.emit('set audio player', {soundcloud: tracks[0], stream: currentStreamUrl, currentTime: 0});
+						io.emit('comment', 'Now Playing: ' + tracks[0].title + ' by ' + tracks[0].user.username);
 					}
 				}
 			}, interval);
-			io.emit('set audio player', {stream: currentStreamUrl, currentTime: 0})
+			io.emit('set audio player', {soundcloud: tracks[0], stream: currentStreamUrl, currentTime: 0})
+			io.emit('comment', 'Now Playing: ' + tracks[0].title + ' by ' + tracks[0].user.username);
+			started = true;
 		}
 	});
 });

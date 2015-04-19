@@ -1,6 +1,9 @@
 extends layout
 
 block content
+	div#nowPlaying
+		img#nowPlayingImage
+		p#nowPlayingInfo
 	form(id="comment", method="post", action="#")
 		input#commentText(type="text", placeholder="Comment")
 		input(type="submit", name="submit" value="Submit")
