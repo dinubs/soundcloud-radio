@@ -29,6 +29,7 @@ trackForm.onsubmit = function(e) {
 			return false;
 		}
 		socket.emit('add track', body);
+		comment("This track has been added to the queue!!!");
 	});
 	track.value = '';
 	return false;
