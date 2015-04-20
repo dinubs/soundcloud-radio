@@ -18,43 +18,45 @@ var currentTime = 0;
 var currentTrackDuration = 0;
 var interval = 50;
 var started = false;
+var currentIndex = 0;
+var currentTrack;
 
 io.on('connection', function (socket) {
 	socket.on('comment', function(data) {
 		console.log(data);
 		io.emit('comment', data);
 	});
-	if (currentStreamUrl) {
-		socket.emit('set audio player', {stream: currentStreamUrl, currentTime: currentTime})
+	if (started) {
+		socket.emit('set audio player', {soundcloud: currentTrack, stream: currentStreamUrl, currentTime: currentTime})
 	}
 	socket.on('add track', function(url) {
-		currentTrackDuration = url.duration
 		tracks.push(url);
-		currentStreamUrl = url.stream_url + '?client_id=6e73cbbe5e7edeba75334acbeb81492f';
 		console.log(tracks.length);
 		if (!started) {
 			setInterval(function() {
 				currentTime += interval;
 				// console.log(currentTime / currentTrackDuration * 100);
-				if (currentTime > currentTrackDuration) {
-					console.log(tracks.length);
+				if (currentTime > currentTrackDuration && started) {
 					currentTime = 0;
-					io.emit('comment', 'Choosing next track!');
-					tracks.shift();
-					console.log(tracks.length);
-					if (tracks.length == 0 && started) {
+					currentIndex++;
+					console.log(currentIndex);
+					if (tracks.length == currentIndex && started) {
 						io.emit('comment', 'No tracks left in the queue :(');
 						started = false;
 					} else{
-						currentStreamUrl = tracks[0].stream_url + '?client_id=6e73cbbe5e7edeba75334acbeb81492f';
-						currentTrackDuration = tracks[0].duration;
-						io.emit('set audio player', {stream: currentStreamUrl, currentTime: 0});
-						io.emit('comment', 'Now Playing: ' + tracks[0].title);
+						currentTrack = tracks[currentIndex];
+						currentStreamUrl = currentTrack.stream_url + '?client_id=6e73cbbe5e7edeba75334acbeb81492f';
+						currentTrackDuration = currentTrack.duration;
+						io.emit('set audio player', {soundcloud: currentTrack, stream: currentStreamUrl, currentTime: 0});
+						io.emit('comment', 'Now Playing: ' + currentTrack.title + ' by ' + currentTrack.user.username);
 					}
 				}
 			}, interval);
-			io.emit('set audio player', {stream: currentStreamUrl, currentTime: 0});
-			io.emit('comment', 'Now Playing: ' + tracks[0].title);
+			currentTrack = tracks[0];
+			currentTrackDuration = url.duration
+			currentStreamUrl = url.stream_url + '?client_id=6e73cbbe5e7edeba75334acbeb81492f';
+			io.emit('set audio player', {soundcloud: currentTrack, stream: currentStreamUrl, currentTime: 0});
+			io.emit('comment', 'Now Playing: ' + currentTrack.title);
 			started = true;
 		}
 	});

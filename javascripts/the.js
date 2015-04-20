@@ -1,6 +1,6 @@
 var resolve = require("soundcloud-resolve");
 
-var socket = io.connect('http://localhost:3000');
+var socket = io.connect(window.location.hostname);
 
 currentTrack = new Audio();
 
@@ -45,7 +45,7 @@ function comment(text) {
 }
 
 socket.on('set audio player', function(data) {
-	console.log(data.soundcloud);
+	// console.log(data.soundcloud);
 	var soundcloudInfo = data.soundcloud;
 
 	nowPlayingImage.src = soundcloudInfo.artwork_url;
