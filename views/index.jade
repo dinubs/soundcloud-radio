@@ -1,13 +1,21 @@
 extends layout
 
 block content
-	div#nowPlaying
-		img#nowPlayingImage
-		p#nowPlayingInfo
+	.playlist-wrap
+		.progress
+			.progress-full
+			.progress-part
+		.playlist-inner
+			img#playlist-img
+			#info
+				#title
+				a.request-button(href="" target="_blank")
+					i(class="fa fa-soundcloud fa-2x")				
 	form(id="comment", method="post", action="#")
 		input#commentText(type="text", placeholder="Comment")
 		input(type="submit", name="submit" value="Submit")
 	form(id="track", method="post", action="#")
 		input#url(type="url", placeholder="Request Track")
 		input(type="submit", name="submit" value="Submit")
-	div#comments
+	ul#comments
+		li Testing

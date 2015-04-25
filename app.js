@@ -6,6 +6,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var sass = require('node-sass-middleware');
 var browserify = require('browserify-middleware');
+var bourbon = require('node-bourbon');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
@@ -22,16 +23,7 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use('/javascripts', browserify('./javascripts'));
-app.use(
-    sass({
-        src: __dirname + '/sass', //where the sass files are 
-        dest: path.join(__dirname, 'public'),
-        debug: true,
-        outputStyle: 'compressed',
-        prefix:  '/prefix'
-    })
-);
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);

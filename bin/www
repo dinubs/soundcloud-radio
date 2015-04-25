@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 var debug = require('debug')('soundcloud-radio');
 var app = require('../app');
+var striptags = require('striptags');
+var resolve = require("soundcloud-resolve");
+var clientId = '6e73cbbe5e7edeba75334acbeb81492f';
 
 app.set('port', process.env.PORT || 3000);
 
@@ -11,53 +14,94 @@ var server = app.listen(app.get('port'), function() {
 var io = require('socket.io')(server);
 
 server.listen(80);
+var tracks, 
+	currentStreamUrl, 
+	currentTime, 
+	currentTrackDuration, 
+	interval, 
+	currentIndex, 
+	currentTrack, 
+	replaying;
 
-var tracks = [];
-var currentStreamUrl = '';
-var currentTime = 0;
-var currentTrackDuration = 0;
-var interval = 50;
-var started = false;
-var currentIndex = 0;
-var currentTrack;
+tracks = [];
+interval = 50;
+currentIndex = 0;
+replaying = false;
+currentTime = 0;
+
+
+
+resolve("6e73cbbe5e7edeba75334acbeb81492f", 'https://soundcloud.com/porter-robinson/sad-machine', function(err, body, stream_url) {
+	console.log(err);
+	if (err || body.kind == 'playlist' || body.streamable == false) {
+		console.log("Sorry that track is not playable!");
+		return false;
+	}
+	console.log(body);
+	tracks.push(body);
+	currentStreamUrl = tracks[0].stream_url + '?client_id=' + clientId;
+	currentTrackDuration = tracks[0].duration;
+	currentTrack = tracks[0];
+	callInterval();
+});
 
 io.on('connection', function (socket) {
 	socket.on('comment', function(data) {
-		console.log(data);
-		io.emit('comment', data);
+		io.emit('comment', striptags(data));
 	});
-	if (started) {
-		socket.emit('set audio player', {soundcloud: currentTrack, stream: currentStreamUrl, currentTime: currentTime})
-	}
+	socket.emit('set audio player', {soundcloud: currentTrack, stream: currentStreamUrl, currentTime: currentTime})
 	socket.on('add track', function(url) {
 		tracks.push(url);
 		console.log(tracks.length);
-		if (!started) {
-			setInterval(function() {
-				currentTime += interval;
-				// console.log(currentTime / currentTrackDuration * 100);
-				if (currentTime > currentTrackDuration && started) {
-					currentTime = 0;
-					currentIndex++;
-					console.log(currentIndex);
-					if (tracks.length == currentIndex && started) {
-						io.emit('comment', 'No tracks left in the queue :(');
-						started = false;
-					} else{
-						currentTrack = tracks[currentIndex];
-						currentStreamUrl = currentTrack.stream_url + '?client_id=6e73cbbe5e7edeba75334acbeb81492f';
-						currentTrackDuration = currentTrack.duration;
-						io.emit('set audio player', {soundcloud: currentTrack, stream: currentStreamUrl, currentTime: 0});
-						io.emit('comment', 'Now Playing: ' + currentTrack.title + ' by ' + currentTrack.user.username);
-					}
-				}
-			}, interval);
-			currentTrack = tracks[0];
-			currentTrackDuration = url.duration
-			currentStreamUrl = url.stream_url + '?client_id=6e73cbbe5e7edeba75334acbeb81492f';
-			io.emit('set audio player', {soundcloud: currentTrack, stream: currentStreamUrl, currentTime: 0});
-			io.emit('comment', 'Now Playing: ' + currentTrack.title);
-			started = true;
+		if (replaying) {
+			currentIndex = tracks.length - 2;
+			// currentTrack = tracks[tracks.length - 1];
+			// currentTrackDuration = url.duration
+			// currentStreamUrl = url.stream_url + '?client_id=' + clientId;
+			// io.emit('set audio player', {soundcloud: currentTrack, stream: currentStreamUrl, currentTime: 0});
+			// io.emit('comment', 'Now Playing: ' + currentTrack.title);
+			replaying = false;
 		}
 	});
 });
+
+function callInterval() {
+	setInterval(function() {
+		currentTime += interval;
+		// console.log(currentTime);
+		if (currentTime > currentTrackDuration) {
+			currentTime = 0;
+			currentIndex++;
+			console.log(currentIndex);
+			console.log(tracks.length);
+			if (tracks.length == currentIndex) {
+				currentIndex = 0;
+				tracks.shuffle();
+				currentTrack = tracks[currentIndex];
+				replaying = true;
+			} else{
+				currentTrack = tracks[currentIndex];
+			}
+			if (replaying == true) {
+				replaying = false;
+			}
+			currentStreamUrl = currentTrack.stream_url + '?client_id=6e73cbbe5e7edeba75334acbeb81492f';
+			currentTrackDuration = currentTrack.duration;
+			io.emit('set audio player', {soundcloud: currentTrack, stream: currentStreamUrl, currentTime: 0});
+			io.emit('comment', 'Now Playing: ' + currentTrack.title + ' by ' + currentTrack.user.username);
+		}
+	}, interval);
+}
+
+
+Array.prototype.shuffle = function() {
+  var i = this.length, j, temp;
+  if ( i == 0 ) return this;
+  while ( --i ) {
+     j = Math.floor( Math.random() * ( i + 1 ) );
+     temp = this[i];
+     this[i] = this[j];
+     this[j] = temp;
+  }
+  return this;
+}
