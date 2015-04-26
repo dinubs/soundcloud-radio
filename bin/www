@@ -82,9 +82,6 @@ function callInterval() {
 			} else{
 				currentTrack = tracks[currentIndex];
 			}
-			if (replaying == true) {
-				replaying = false;
-			}
 			currentStreamUrl = currentTrack.stream_url + '?client_id=6e73cbbe5e7edeba75334acbeb81492f';
 			currentTrackDuration = currentTrack.duration;
 			io.emit('set audio player', {soundcloud: currentTrack, stream: currentStreamUrl, currentTime: 0});
