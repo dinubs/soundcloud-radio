@@ -37,7 +37,6 @@ resolve("6e73cbbe5e7edeba75334acbeb81492f", 'https://soundcloud.com/porter-robin
 		console.log("Sorry that track is not playable!");
 		return false;
 	}
-	console.log(body);
 	tracks.push(body);
 	currentStreamUrl = tracks[0].stream_url + '?client_id=' + clientId;
 	currentTrackDuration = tracks[0].duration;
@@ -52,7 +51,8 @@ io.on('connection', function (socket) {
 	socket.emit('set audio player', {soundcloud: currentTrack, stream: currentStreamUrl, currentTime: currentTime})
 	socket.on('add track', function(url) {
 		tracks.push(url);
-		console.log(tracks.length);
+		console.log("Index: ", currentIndex);
+		console.log("Length: ",tracks.length);
 		if (replaying) {
 			currentIndex = tracks.length - 2;
 			// currentTrack = tracks[tracks.length - 1];
@@ -72,11 +72,11 @@ function callInterval() {
 		if (currentTime > currentTrackDuration) {
 			currentTime = 0;
 			currentIndex++;
-			console.log(currentIndex);
-			console.log(tracks.length);
+			console.log("Index: ", currentIndex);
+			console.log("Length: ", tracks.length);
 			if (tracks.length == currentIndex) {
 				currentIndex = 0;
-				tracks.shuffle();
+				tracks = tracks.shuffle();
 				currentTrack = tracks[currentIndex];
 				replaying = true;
 			} else{
